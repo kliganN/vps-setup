@@ -1,0 +1,57 @@
+---
+
+- name: Setup VPS servers (Full Settings)
+  hosts: client1
+  become: true
+
+  tasks:
+    - name: Apt update repositories
+      apt:
+        update_cache: yes
+        cache_valid_time: 7200
+
+    - name: Add user to system and sudoers
+      user:
+        name: admin
+        password: "{{ 'ur_password' | password_hash('sha512') }}"
+        createhome: yes
+        shell: /bin/bash
+        groups: ssh,sudo
+        append: yes
+
+    - name: Edit visudo for sudo group with nopasswd
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo\s+'
+        line: '%sudo   ALL=(ALL:ALL) NOPASSWD:ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Add umask 0077 to bashrc for user admin
+      lineinfile:
+        path: /home/admin/.bashrc
+        line: 'umask 0077'
+        state: present
+        create: yes
+        owner: admin
+        group: admin
+
+    - name:
+      package:
+        name:
+          - git
+          - ufw
+          - nmap
+          - net-tools
+          - curl
+        state: present
+
+    - name: Change ssh settings (Port, PwdAuth)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#Port\s+'
+        line: 'Port 2207'
+
+    - name: Restart sshd service
+      shell: systemctl restart sshd

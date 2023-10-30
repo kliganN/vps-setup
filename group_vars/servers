@@ -1,0 +1,8 @@
+---
+
+ansible_user:		client
+ansible_ssh_pass:	ur_password
+ansible_port:		2207
+environment:		PRODUCTION
+owner:			kligann
+

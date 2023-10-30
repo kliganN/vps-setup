@@ -1,0 +1,38 @@
+
+---
+
+- name: Create Full shared folder
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install Samba
+      apt:
+        name: samba
+        update_cache: yes
+
+    - name: Create shared directory
+      file:
+        path: /home/client/jellyfin-media
+        state: directory
+        mode: '0777'
+
+    - name: Configuring shared samba dir
+      lineinfile:
+        dest: /etc/samba/smb.conf
+        line: |
+          [jellyfin-media]
+            comment = Shared folder for Media Server
+            path = /home/client/jellyfin-media
+            browseable = yes
+            guest ok = yes
+            read only = no
+            create mask = 0777
+            directory mask = 0777
+      notify: restart samba
+
+  handlers:
+    - name: restart samba
+      service:
+        name: smbd
+        state: restarted
